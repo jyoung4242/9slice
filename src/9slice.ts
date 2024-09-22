@@ -1,5 +1,11 @@
 import { ImageSource, ScreenElement, Vector } from "excalibur";
 
+enum NineSliceStretch {
+  Stretch,
+  Tile,
+  TileFit,
+}
+
 type NineSliceConfig = {
   source: ImageSource;
   soourceSpecs: {
@@ -15,8 +21,8 @@ type NineSliceConfig = {
     marginBottom: number;
     marginRight: number;
     drawCenter: boolean;
-    stretchH: boolean;
-    stretchV: boolean;
+    stretchH: NineSliceStretch;
+    stretchV: NineSliceStretch;
   };
 };
 
