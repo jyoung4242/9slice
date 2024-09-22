@@ -1,33 +1,32 @@
-import { ImageSource, ScreenElement, Vector } from "excalibur";
+import { ExcaliburGraphicsContext, Graphic, GraphicOptions, ImageSource, Vector } from "excalibur";
 
-enum NineSliceStretch {
+export enum NineSliceStretch {
   Stretch,
   Tile,
   TileFit,
 }
 
-type NineSliceConfig = {
+export type NineSliceConfig = {
+  graphicOptions: GraphicOptions;
   source: ImageSource;
-  soourceSpecs: {
-    size: Vector;
-  };
-  destinationSpecs: {
-    pos: Vector;
-    size: Vector;
-  };
-  nineSlice: {
-    marginTop: number;
-    marginLeft: number;
-    marginBottom: number;
-    marginRight: number;
-    drawCenter: boolean;
-    stretchH: NineSliceStretch;
-    stretchV: NineSliceStretch;
-  };
+  sourceDims: Vector;
+  marginTop: number;
+  marginLeft: number;
+  marginBottom: number;
+  marginRight: number;
+  drawCenter: boolean;
+  stretchH: NineSliceStretch;
+  stretchV: NineSliceStretch;
 };
 
-export class NineSlice extends ScreenElement {
-  constructor(src: ImageSource, config: NineSliceConfig) {
-    super();
+export class NineSlice extends Graphic {
+  constructor(public config: NineSliceConfig) {
+    super(config.graphicOptions);
+  }
+
+  protected _drawImage(ex: ExcaliburGraphicsContext, x: number, y: number): void {}
+
+  clone(): Graphic {
+    return new NineSlice(this.config);
   }
 }
