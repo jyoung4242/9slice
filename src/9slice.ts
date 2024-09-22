@@ -1,4 +1,4 @@
-import { ExcaliburGraphicsContext, Graphic, GraphicOptions, ImageSource } from "excalibur";
+import { ExcaliburGraphicsContext, Graphic, GraphicOptions, ImageSource, Logger } from "excalibur";
 
 export enum NineSliceStretch {
   Stretch,
@@ -6,8 +6,7 @@ export enum NineSliceStretch {
   TileFit,
 }
 
-export type NineSliceConfig = {
-  graphicOptions: GraphicOptions;
+export type NineSliceConfig = GraphicOptions & {
   source: ImageSource;
   sourceConfig: {
     width: number;
@@ -27,6 +26,7 @@ export type NineSliceConfig = {
 };
 
 export class NineSlice extends Graphic {
+  imgSource: ImageSource;
   sourceSprite: HTMLImageElement;
   canvasA: HTMLCanvasElement;
   canvasB: HTMLCanvasElement;
@@ -38,10 +38,11 @@ export class NineSlice extends Graphic {
   canvasH: HTMLCanvasElement;
   canvasI: HTMLCanvasElement;
   firstTimeFlag = true;
+  private _logger = Logger.getInstance();
   constructor(public config: NineSliceConfig) {
-    super(config.graphicOptions);
+    super(config);
+    this.imgSource = config.source;
     this.sourceSprite = config.source.image;
-    console.log(config.source.image);
 
     this.canvasA = document.createElement("canvas");
     this.canvasB = document.createElement("canvas");
@@ -56,94 +57,104 @@ export class NineSlice extends Graphic {
   }
 
   protected _drawImage(ex: ExcaliburGraphicsContext, x: number, y: number): void {
-    //just basic drawing first
-    if (this.firstTimeFlag) {
-      console.log("this.firstTimeFlag");
-      this.firstTimeFlag = false;
-      console.log(ex);
-      console.log(x, y);
-      console.log(this.sourceSprite);
-      console.log(this.canvasA);
+    if (this.imgSource.isLoaded()) {
+      ex.drawImage(this.canvasA, 0, 0, this.canvasA.width, this.canvasA.height, x, y, this.canvasA.width, this.canvasA.height);
+      ex.drawImage(
+        this.canvasB,
+        0,
+        0,
+        this.canvasB.width,
+        this.canvasB.height,
+        x + this.config.sourceConfig.leftMargin,
+        y,
+        this.canvasB.width,
+        this.canvasB.height
+      );
+      ex.drawImage(
+        this.canvasC,
+        0,
+        0,
+        this.canvasC.width,
+        this.canvasC.height,
+        x + (this.config.sourceConfig.width - this.config.sourceConfig.rightMargin),
+        y,
+        this.canvasC.width,
+        this.canvasC.height
+      );
+      ex.drawImage(
+        this.canvasD,
+        0,
+        0,
+        this.canvasD.width,
+        this.canvasD.height,
+        x,
+        y + this.config.sourceConfig.topMargin,
+        this.canvasD.width,
+        this.canvasD.height
+      );
+      if (this.config.destinationConfig.drawCenter)
+        ex.drawImage(
+          this.canvasE,
+          0,
+          0,
+          this.canvasE.width,
+          this.canvasE.height,
+          x + this.config.sourceConfig.leftMargin,
+          y + this.config.sourceConfig.topMargin,
+          this.canvasE.width,
+          this.canvasE.height
+        );
+      ex.drawImage(
+        this.canvasF,
+        0,
+        0,
+        this.canvasF.width,
+        this.canvasF.height,
+        x + this.config.sourceConfig.width - this.config.sourceConfig.rightMargin,
+        y + this.config.sourceConfig.topMargin,
+        this.canvasF.width,
+        this.canvasF.height
+      );
+      ex.drawImage(
+        this.canvasG,
+        0,
+        0,
+        this.canvasG.width,
+        this.canvasG.height,
+        0,
+        y + this.config.sourceConfig.height - this.config.sourceConfig.bottomMargin,
+        this.canvasG.width,
+        this.canvasG.height
+      );
+      ex.drawImage(
+        this.canvasH,
+        0,
+        0,
+        this.canvasH.width,
+        this.canvasH.height,
+        x + this.config.sourceConfig.leftMargin,
+        y + this.config.sourceConfig.height - this.config.sourceConfig.bottomMargin,
+        this.canvasH.width,
+        this.canvasH.height
+      );
+      ex.drawImage(
+        this.canvasI,
+        0,
+        0,
+        this.canvasI.width,
+        this.canvasI.height,
+        x + this.config.sourceConfig.width - this.config.sourceConfig.rightMargin,
+        y + this.config.sourceConfig.height - this.config.sourceConfig.bottomMargin,
+        this.canvasI.width,
+        this.canvasI.height
+      );
+    } else {
+      this._logger.warnOnce(
+        `ImageSource ${this.imgSource.path}` +
+          ` is not yet loaded and won't be drawn. Please call .load() or include in a Loader.\n\n` +
+          `Read https://excaliburjs.com/docs/imagesource for more information.`
+      );
     }
-    ex.drawImage(this.canvasA, 0, 0, this.canvasA.width, this.canvasA.height, x, y, this.canvasA.width, this.canvasA.height);
-    ex.drawImage(
-      this.canvasB,
-      0,
-      0,
-      this.canvasB.width,
-      this.canvasB.height,
-      x + this.config.sourceConfig.leftMargin,
-      y,
-      this.canvasB.width,
-      this.canvasB.height
-    );
-    ex.drawImage(
-      this.canvasC,
-      0,
-      0,
-      this.canvasC.width,
-      this.canvasC.height,
-      x + (this.config.sourceConfig.width - this.config.sourceConfig.rightMargin),
-      y,
-      this.canvasC.width,
-      this.canvasC.height
-    );
-    ex.drawImage(
-      this.canvasD,
-      0,
-      0,
-      this.canvasD.width,
-      this.canvasD.height,
-      x,
-      y + this.config.sourceConfig.topMargin,
-      this.canvasD.width,
-      this.canvasD.height
-    );
-    /*ex.drawImage(this.canvasE, 0, 0, this.canvasE.width, this.canvasE.height, 0, 0, this.canvasE.width, this.canvasE.height);*/
-    ex.drawImage(
-      this.canvasF,
-      0,
-      0,
-      this.canvasF.width,
-      this.canvasF.height,
-      x + this.config.sourceConfig.width - this.config.sourceConfig.rightMargin,
-      y + this.config.sourceConfig.topMargin,
-      this.canvasF.width,
-      this.canvasF.height
-    );
-    ex.drawImage(
-      this.canvasG,
-      0,
-      0,
-      this.canvasG.width,
-      this.canvasG.height,
-      0,
-      y + this.config.sourceConfig.height - this.config.sourceConfig.bottomMargin,
-      this.canvasG.width,
-      this.canvasG.height
-    );
-    ex.drawImage(
-      this.canvasH,
-      0,
-      0,
-      this.canvasH.width,
-      this.canvasH.height,
-      x + this.config.sourceConfig.leftMargin,
-      y + this.config.sourceConfig.height - this.config.sourceConfig.bottomMargin,
-      this.canvasH.width,
-      this.canvasH.height
-    );
-    ex.drawImage(
-      this.canvasI,
-      0,
-      0,
-      this.canvasI.width,
-      this.canvasI.height,
-      x + this.config.sourceConfig.width - this.config.sourceConfig.rightMargin,
-      y + this.config.sourceConfig.height - this.config.sourceConfig.bottomMargin,
-      this.canvasI.width,
-      this.canvasI.height
-    );
   }
 
   initialize() {

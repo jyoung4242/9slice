@@ -41,10 +41,8 @@ class MyTestUI extends ScreenElement {
 await game.start(loader);
 
 const myNewNineSlice = new NineSlice({
-  graphicOptions: {
-    width: 256,
-    height: 256,
-  },
+  width: 256,
+  height: 256,
   sourceConfig: {
     width: 256,
     height: 256,
