@@ -1,6 +1,6 @@
 import "./style.css";
 import { UI } from "@peasy-lib/peasy-ui";
-import { Engine, DisplayMode, TileMap, ImageSource, SpriteSheet, Camera, Vector, ScreenElement } from "excalibur";
+import { Engine, DisplayMode, TileMap, ImageSource, SpriteSheet, Camera, Vector, ScreenElement, Color } from "excalibur";
 import { NineSlice, NineSliceStretch } from "./9slice";
 import { loader, Resources } from "./resources";
 const model = {};
@@ -43,6 +43,7 @@ await game.start(loader);
 const myNewNineSlice = new NineSlice({
   width: 256,
   height: 256,
+
   sourceConfig: {
     width: 256,
     height: 256,
@@ -64,4 +65,5 @@ const ui = new MyTestUI();
 game.add(ui);
 console.log(ui);
 game.currentScene.camera.strategy.lockToActor(ui);
+game.currentScene.camera.zoom = 0.5;
 console.log(myNewNineSlice);
