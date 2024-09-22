@@ -54,6 +54,14 @@ export class NineSlice extends Graphic {
     this.canvasH = document.createElement("canvas");
     this.canvasI = document.createElement("canvas");
     this.initialize();
+
+    if (!this.imgSource.isLoaded()) {
+      this._logger.warnOnce(
+        `ImageSource ${this.imgSource.path}` +
+          ` is not yet loaded and won't be drawn. Please call .load() or include in a Loader.\n\n` +
+          `Read https://excaliburjs.com/docs/imagesource for more information.`
+      );
+    }
   }
 
   protected _drawImage(ex: ExcaliburGraphicsContext, x: number, y: number): void {
