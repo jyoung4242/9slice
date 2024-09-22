@@ -53,8 +53,6 @@ const myNewNineSlice = new NineSlice({
   },
   source: Resources.nineSliceImage,
   destinationConfig: {
-    width: 256,
-    height: 256,
     drawCenter: true,
     stretchH: NineSliceStretch.Stretch,
     stretchV: NineSliceStretch.Stretch,

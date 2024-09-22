@@ -17,8 +17,6 @@ export type NineSliceConfig = GraphicOptions & {
     rightMargin: number;
   };
   destinationConfig: {
-    width: number;
-    height: number;
     drawCenter: boolean;
     stretchH: NineSliceStretch;
     stretchV: NineSliceStretch;
