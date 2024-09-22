@@ -24,22 +24,6 @@ const game = new Engine({
   displayMode: DisplayMode.Fixed, // the display mode
 });
 
-const myNewNineSlice = new NineSlice({
-  graphicOptions: {
-    width: 256,
-    height: 256,
-  },
-  source: Resources.nineSliceImage,
-  sourceDims: new Vector(2, 2),
-  marginTop: 52,
-  marginLeft: 53,
-  marginBottom: 52,
-  marginRight: 53,
-  drawCenter: true,
-  stretchH: NineSliceStretch.Stretch,
-  stretchV: NineSliceStretch.Stretch,
-});
-
 class MyTestUI extends ScreenElement {
   constructor() {
     super({
@@ -55,9 +39,33 @@ class MyTestUI extends ScreenElement {
 }
 
 await game.start(loader);
+
+const myNewNineSlice = new NineSlice({
+  graphicOptions: {
+    width: 256,
+    height: 256,
+  },
+  sourceConfig: {
+    width: 256,
+    height: 256,
+    topMargin: 52,
+    leftMargin: 53,
+    bottomMargin: 52,
+    rightMargin: 53,
+  },
+  source: Resources.nineSliceImage,
+  destinationConfig: {
+    width: 256,
+    height: 256,
+    drawCenter: true,
+    stretchH: NineSliceStretch.Stretch,
+    stretchV: NineSliceStretch.Stretch,
+  },
+});
+
 const ui = new MyTestUI();
 
 game.add(ui);
 console.log(ui);
-
+game.currentScene.camera.strategy.lockToActor(ui);
 console.log(myNewNineSlice);
