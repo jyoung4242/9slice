@@ -68,6 +68,15 @@ export class NineSlice extends Graphic {
     }
   }
 
+  setNewImage(imgSrc: ImageSource, auto: boolean = false) {
+    this.imgSource = imgSrc;
+    this.sourceSprite = imgSrc.image;
+    console.log("image set");
+    setTimeout(() => {
+      if (auto) this.initialize();
+    }, 2500);
+  }
+
   setTargetWidth(newWidth: number, auto: boolean = false) {
     this.config.width = newWidth;
     if (auto) this.initialize();
@@ -320,6 +329,9 @@ export class NineSlice extends Graphic {
     this.canvasA.width = this.config.sourceConfig.leftMargin;
     this.canvasA.height = this.config.sourceConfig.topMargin;
     const Atx = this.canvasA.getContext("2d");
+    console.log("drawing to canvas");
+    console.log(this.sourceSprite);
+
     Atx?.drawImage(this.sourceSprite, 0, 0, this.canvasA.width, this.canvasA.height, 0, 0, this.canvasA.width, this.canvasA.height);
 
     //top slice

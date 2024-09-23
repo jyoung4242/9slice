@@ -17,12 +17,24 @@ import {
 } from "excalibur";
 import { NineSlice, NineSliceStretch } from "./9slice";
 import { loader, Resources } from "./resources";
+
+const spriteArray = [
+  { src: Resources.nineSliceImage, top: 13, left: 13, right: 13, bottom: 13 },
+  { src: Resources.nineSliceImage2, top: 5, left: 5, right: 5, bottom: 5 },
+  { src: Resources.nineSliceImage3, top: 5, left: 6, right: 5, bottom: 6 },
+];
+let spriteIndex = 2;
+
 const model = {
   showHud: false,
   hstretch: "0",
   vstretch: "0",
   targetWidth: "128",
   targetHeight: "100",
+  topMargin: "5",
+  leftMargin: "6",
+  bottomMargin: "5",
+  rightMargin: "6",
   zoom: "1.0",
   update9slice: (e: any, m: any) => {
     switch (m.hstretch) {
@@ -50,6 +62,7 @@ const model = {
     }
     myNewNineSlice.setTargetWidth(parseInt(m.targetWidth));
     myNewNineSlice.setTargetHeight(parseInt(m.targetHeight));
+    myNewNineSlice.setMargins(parseInt(m.leftMargin), parseInt(m.topMargin), parseInt(m.rightMargin), parseInt(m.bottomMargin));
     myNewNineSlice.initialize();
   },
   updatezoom: (e: any, m: any) => {
@@ -73,15 +86,17 @@ const template = `
         left:50%; 
         transform: translate(-50% , -50%);
         gap: 10px;
+        pointer-events: none;
     }
 
     .hudcontainer{
-        width: 15%;
+        width: 18%;
         display: flex;
         flex-direction: column;
         gap: 10px;
         margin-left: 10px;
         margin-top: 10px;
+        pointer-events: auto;
     }
 </style> 
 <div> 
@@ -90,7 +105,7 @@ const template = `
       <div class="hudcontainer" \${===showHud}>
         <div>
             <div>H stretch</div>
-            <select >
+            <select \${change@=>update9slice}>
               
               <option value="1" \${'1' ==> hstretch} >Tile</option>
               <option value="2" \${'2' ==> hstretch}>TileFit</option>
@@ -100,7 +115,7 @@ const template = `
           
         <div>
           <div>V stretch</div>
-          <select >
+          <select \${change@=>update9slice} >
               
               <option value="1" \${'1' ==> vstretch}>Tile</option>
               <option value="2" \${'2' ==> vstretch}>TileFit</option>
@@ -110,16 +125,45 @@ const template = `
         </div>
 
         <div>
+          <div>Top Slice Margin</div>
+          <div>
+            <input \${change@=>update9slice} type="number" id="targetWidth" value="5" min="1" max="64" step="1"  \${value<=>topMargin} />
+          </div>
+        </div>
+
+        <div>
+          <div>Right Slice Margin</div>
+          <div>
+            <input \${change@=>update9slice} type="number" id="targetWidth" value="6" min="1" max="64" step="1"  \${value<=>rightMargin} />
+          </div>
+        </div>
+
+        <div>
+          <div>Bottom Slice Margin</div>
+          <div>
+            <input \${change@=>update9slice} type="number" id="targetWidth" value="5" min="1" max="64" step="1"  \${value<=>bottomMargin} />
+          </div>
+        </div>
+
+
+        <div>
+          <div>Left Slice Margin</div>
+          <div>
+            <input \${change@=>update9slice} type="number" id="targetWidth" value="6" min="1" max="64" step="1"  \${value<=>leftMargin} />
+          </div>
+        </div>
+
+        <div>
           <div>Target Width</div>
           <div>
-            <input type="number" id="targetWidth" value="128" min="1" max="800" step="1"  \${value==>targetWidth} />
+            <input \${change@=>update9slice} type="number" id="targetWidth" value="128" min="1" max="800" step="1"  \${value==>targetWidth} />
           </div>
         </div>
 
         <div>
           <div>Target Height</div>
           <div>
-            <input type="number" id="targetheight" value="100" min="1" max="800" step="1" \${value==>targetHeight} />
+            <input \${change@=>update9slice} type="number" id="targetheight" value="100" min="1" max="800" step="1" \${value==>targetHeight} />
           </div>
         </div>
 
@@ -130,9 +174,7 @@ const template = `
           </div>
         </div>
 
-        <div>
-          <button id="start" \${click@=>update9slice}>Draw</button>
-        </div>
+        
 
       </div>
     </hud-layer>
@@ -153,7 +195,7 @@ let startingH = NineSliceStretch.Stretch;
 let startingV = NineSliceStretch.Stretch;
 
 //Setup Graphics
-const myNewNineSlice = new NineSlice({
+let myNewNineSlice = new NineSlice({
   width: parseInt(model.targetWidth),
   height: parseInt(model.targetHeight),
 
@@ -183,6 +225,7 @@ const testActor = new Actor({
   anchor: Vector.Zero,
 });
 testActor.graphics.use(myNewNineSlice);
+
 testActor.onInitialize = () => {
   const label = new Label({
     text: "Target Nine Slice",
@@ -207,6 +250,29 @@ const controlActor = new Actor({
 });
 controlActor.graphics.use(testSprite);
 //add label to control actor
+
+const leftButton = new Actor({
+  width: 16,
+  height: 64,
+  x: -24,
+  y: 0,
+  anchor: Vector.Zero,
+});
+leftButton.graphics.use(Resources.arrow.toSprite());
+leftButton.onInitialize = () => {
+  leftButton.on("pointerup", () => {
+    changeImage("left");
+  });
+};
+const rightButton = new Actor({ width: 16, height: 64, x: 64 + 8, y: 0, anchor: Vector.Zero });
+rightButton.onInitialize = () => {
+  rightButton.on("pointerup", () => {
+    changeImage("right");
+  });
+};
+const flippedSprite = Resources.arrow.toSprite();
+flippedSprite.flipHorizontal = true;
+rightButton.graphics.use(flippedSprite);
 controlActor.onInitialize = () => {
   const label = new Label({
     text: "Original Tile",
@@ -219,6 +285,8 @@ controlActor.onInitialize = () => {
     }),
   });
   controlActor.addChild(label);
+  controlActor.addChild(leftButton);
+  controlActor.addChild(rightButton);
 };
 
 game.add(testActor);
@@ -227,3 +295,52 @@ game.currentScene.camera.strategy.lockToActor(testActor);
 game.currentScene.camera.zoom = parseInt(model.zoom);
 
 model.showHud = true;
+
+function changeImage(who: "left" | "right") {
+  console.log("change image", who);
+  if (who === "left") {
+    if (spriteIndex === 0) {
+      spriteIndex = 2;
+    } else {
+      spriteIndex--;
+    }
+  } else {
+    if (spriteIndex === 2) {
+      spriteIndex = 0;
+    } else {
+      spriteIndex++;
+    }
+  }
+  const nextImage = spriteArray[spriteIndex];
+  controlActor.graphics.use(nextImage.src.toSprite());
+  let hstretch, vstretch;
+
+  if (model.hstretch === "0") hstretch = NineSliceStretch.Stretch;
+  else if (model.hstretch === "1") hstretch = NineSliceStretch.Tile;
+  else hstretch = NineSliceStretch.TileFit;
+
+  if (model.vstretch === "0") vstretch = NineSliceStretch.Stretch;
+  else if (model.vstretch === "1") vstretch = NineSliceStretch.Tile;
+  else vstretch = NineSliceStretch.TileFit;
+
+  myNewNineSlice = new NineSlice({
+    width: parseInt(model.targetWidth),
+    height: parseInt(model.targetHeight),
+    sourceConfig: {
+      width: 64,
+      height: 64,
+      topMargin: nextImage.top,
+      leftMargin: nextImage.left,
+      bottomMargin: nextImage.bottom,
+      rightMargin: nextImage.right,
+    },
+    source: nextImage.src,
+    destinationConfig: {
+      drawCenter: true,
+      stretchH: hstretch,
+      stretchV: vstretch,
+    },
+  });
+
+  testActor.graphics.use(myNewNineSlice);
+}
