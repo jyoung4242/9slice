@@ -323,6 +323,11 @@ function changeImage(who: "left" | "right") {
   else if (model.vstretch === "1") vstretch = NineSliceStretch.Tile;
   else vstretch = NineSliceStretch.TileFit;
 
+  model.topMargin = nextImage.top.toString();
+  model.rightMargin = nextImage.right.toString();
+  model.bottomMargin = nextImage.bottom.toString();
+  model.leftMargin = nextImage.left.toString();
+
   myNewNineSlice = new NineSlice({
     width: parseInt(model.targetWidth),
     height: parseInt(model.targetHeight),
