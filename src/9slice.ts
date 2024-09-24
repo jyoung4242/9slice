@@ -1,5 +1,4 @@
 import { ExcaliburGraphicsContext, Graphic, GraphicOptions, ImageSource, Logger, Vector } from "excalibur";
-import { b, c } from "vite/dist/node/types.d-aGj9QkWt";
 
 export enum NineSliceStretch {
   Stretch,
@@ -8,7 +7,20 @@ export enum NineSliceStretch {
 }
 
 export type NineSliceConfig = GraphicOptions & {
+  /**
+   *  Image source that's loaded from a Loader or individually
+   *  */
   source: ImageSource;
+
+  /**
+   *  Configuration for the source
+   *
+   *  Details for the source image, including:
+   *
+   *  width and height as numbers of the source image
+   *
+   *  and the 9 slice margins
+   */
   sourceConfig: {
     width: number;
     height: number;
@@ -17,11 +29,25 @@ export type NineSliceConfig = GraphicOptions & {
     bottomMargin: number;
     rightMargin: number;
   };
+
+  /**
+   *  Configuration for the destination
+   *
+   *  Details for the destination image, including:
+   *
+   *  stretching strategies for horizontal and vertical stretching
+   *
+   *  and flag for drawing the center tile if desired
+   */
   destinationConfig: {
     drawCenter: boolean;
     stretchH: NineSliceStretch;
     stretchV: NineSliceStretch;
   };
+
+  /**
+   *  Debug flag, turns on verbose mode
+   */
   debug?: boolean;
 };
 
@@ -39,6 +65,7 @@ export class NineSlice extends Graphic {
   canvasI: HTMLCanvasElement;
   firstTimeFlag = true;
   private _logger = Logger.getInstance();
+
   constructor(public config: NineSliceConfig) {
     super(config);
     if (!this.config.width) this.config.width = 0;
@@ -68,23 +95,26 @@ export class NineSlice extends Graphic {
     }
   }
 
-  setNewImage(imgSrc: ImageSource, auto: boolean = false) {
-    this.imgSource = imgSrc;
-    this.sourceSprite = imgSrc.image;
-    console.log("image set");
-    setTimeout(() => {
-      if (auto) this.initialize();
-    }, 2500);
-  }
-
+  /**
+   *  Sets the target width of the 9 slice (pixels), and recalculates the 9 slice if desired (auto)
+   */
   setTargetWidth(newWidth: number, auto: boolean = false) {
     this.config.width = newWidth;
     if (auto) this.initialize();
   }
+
+  /**
+   *  Sets the target height of the 9 slice (pixels), and recalculates the 9 slice if desired (auto)
+   */
+
   setTargetHeight(newHeight: number, auto: boolean = false) {
     this.config.height = newHeight;
     if (auto) this.initialize();
   }
+
+  /**
+   *  Sets the 9 slice margins (pixels), and recalculates the 9 slice if desired (auto)
+   */
   setMargins(left: number, top: number, right: number, bottom: number, auto: boolean = false) {
     this.config.sourceConfig.leftMargin = left;
     this.config.sourceConfig.topMargin = top;
@@ -93,20 +123,38 @@ export class NineSlice extends Graphic {
     if (auto) this.initialize();
   }
 
-  setStretch(type: "Horizontal" | "Vertical", strategy: NineSliceStretch, auto: boolean = false) {
+  /**
+   *  Sets the stretching strategy for the 9 slice, and recalculates the 9 slice if desired (auto)
+   *
+   */
+  setStretch(type: "Horizontal" | "Vertical" | "Both", strategy: NineSliceStretch, auto: boolean = false) {
     if (type === "Horizontal") {
       this.config.destinationConfig.stretchH = strategy;
+    } else if (type === "Vertical") {
+      this.config.destinationConfig.stretchV = strategy;
     } else {
+      this.config.destinationConfig.stretchH = strategy;
       this.config.destinationConfig.stretchV = strategy;
     }
     if (auto) this.initialize();
   }
 
+  /**
+   *  Returns the config of the 9 slice
+   */
   getConfig(): NineSliceConfig {
     return this.config;
   }
 
-  drawTile(
+  /**
+   *  Draws 1 of the 9 tiles based on parameters passed in
+   *  context is the ExcaliburGraphicsContext from the _drawImage function
+   *  destinationSize is the size of the destination image as a vector (width,height)
+   *  targetCanvas is the canvas to draw to
+   *  hstrategy and vstrategy are the horizontal and vertical stretching strategies
+   *  marginW and marginH are optional margins for the 9 slice for positioning
+   */
+  _drawTile(
     context: ExcaliburGraphicsContext,
     targetCanvas: HTMLCanvasElement,
     destinationSize: Vector,
@@ -124,8 +172,8 @@ export class NineSlice extends Graphic {
     let tempMarginW = marginW || 0;
     let tempMarginH = marginH || 0;
     let tempSizeX, tempPositionX, tempSizeY, tempPositionY;
-    let numTilesX = this.getNumberOfTiles(targetCanvas.width, destinationSize.x, hstrategy);
-    let numTilesY = this.getNumberOfTiles(targetCanvas.height, destinationSize.y, vstrategy);
+    let numTilesX = this._getNumberOfTiles(targetCanvas.width, destinationSize.x, hstrategy);
+    let numTilesY = this._getNumberOfTiles(targetCanvas.height, destinationSize.y, vstrategy);
 
     if (this.firstTimeFlag) {
       console.log("margins", tempMarginW, tempMarginH);
@@ -137,7 +185,7 @@ export class NineSlice extends Graphic {
         if (this.firstTimeFlag) {
           console.log("loop indexes", i, j);
         }
-        let { tempSize, tempPosition } = this.calculateParams(
+        let { tempSize, tempPosition } = this._calculateParams(
           i,
           numTilesX,
           targetCanvas.width,
@@ -151,7 +199,7 @@ export class NineSlice extends Graphic {
           console.log("X size/pos", tempSizeX, tempPositionX + tempMarginW);
         }
 
-        ({ tempSize, tempPosition } = this.calculateParams(
+        ({ tempSize, tempPosition } = this._calculateParams(
           j,
           numTilesY,
           targetCanvas.height,
@@ -180,11 +228,14 @@ export class NineSlice extends Graphic {
     if (targetCanvas === this.canvasI) this.firstTimeFlag = false;
   }
 
+  /**
+   *  Draws the 9 slices to the canvas
+   */
   protected _drawImage(ex: ExcaliburGraphicsContext, x: number, y: number): void {
     if (this.imgSource.isLoaded()) {
       //Top left, no strecthing
 
-      this.drawTile(
+      this._drawTile(
         ex,
         this.canvasA,
         //@ts-ignore
@@ -194,7 +245,7 @@ export class NineSlice extends Graphic {
       );
 
       //Top, middle, horizontal stretching
-      this.drawTile(
+      this._drawTile(
         ex,
         this.canvasB,
         //@ts-ignore
@@ -211,7 +262,7 @@ export class NineSlice extends Graphic {
 
       //Top right, no strecthing
 
-      this.drawTile(
+      this._drawTile(
         ex,
         this.canvasC,
         //@ts-ignore
@@ -225,7 +276,7 @@ export class NineSlice extends Graphic {
 
       // middle, left, vertical strecthing
 
-      this.drawTile(
+      this._drawTile(
         ex,
         this.canvasD,
         new Vector(
@@ -241,7 +292,7 @@ export class NineSlice extends Graphic {
 
       // center, both strecthing
       if (this.config.destinationConfig.drawCenter)
-        this.drawTile(
+        this._drawTile(
           ex,
           this.canvasE,
           new Vector(
@@ -257,7 +308,7 @@ export class NineSlice extends Graphic {
         );
 
       //middle, right, vertical strecthing
-      this.drawTile(
+      this._drawTile(
         ex,
         this.canvasF,
 
@@ -274,7 +325,7 @@ export class NineSlice extends Graphic {
       );
 
       //bottom left, no strecthing
-      this.drawTile(
+      this._drawTile(
         ex,
         this.canvasG,
         new Vector(this.config.sourceConfig.leftMargin, this.config.sourceConfig.bottomMargin),
@@ -286,7 +337,7 @@ export class NineSlice extends Graphic {
       );
 
       //bottom middle, horizontal strecthing
-      this.drawTile(
+      this._drawTile(
         ex,
         this.canvasH,
         //@ts-ignore
@@ -303,7 +354,7 @@ export class NineSlice extends Graphic {
       );
 
       //bottom right, no strecthing
-      this.drawTile(
+      this._drawTile(
         ex,
         this.canvasI,
         new Vector(this.config.sourceConfig.rightMargin, this.config.sourceConfig.bottomMargin),
@@ -325,6 +376,7 @@ export class NineSlice extends Graphic {
 
   initialize() {
     //top left slice
+    console.log("drawing to canvasA");
 
     this.canvasA.width = this.config.sourceConfig.leftMargin;
     this.canvasA.height = this.config.sourceConfig.topMargin;
@@ -466,11 +518,19 @@ export class NineSlice extends Graphic {
     );
   }
 
+  /**
+   * Clones the 9 slice
+   */
+
   clone(): Graphic {
     return new NineSlice(this.config);
   }
 
-  getNumberOfTiles(tilesize: number, destinationSize: number, strategy: NineSliceStretch): number {
+  /**
+   * Returns the number of tiles
+   */
+
+  _getNumberOfTiles(tilesize: number, destinationSize: number, strategy: NineSliceStretch): number {
     switch (strategy) {
       case NineSliceStretch.Stretch:
         return 1;
@@ -481,7 +541,10 @@ export class NineSlice extends Graphic {
     }
   }
 
-  calculateParams(
+  /**
+   * Returns the position and size of the tile
+   */
+  _calculateParams(
     tilenum: number,
     numTiles: number,
     tilesize: number,
@@ -519,322 +582,3 @@ export class NineSlice extends Graphic {
     }
   }
 }
-
-/* Parking Lot of old code
-
-
-      let tempSizeX, tempPositionX, tempSizeY, tempPositionY;
-
-      let numTilesX = this.getNumberOfTiles(this.canvasA.width, this.canvasA.width, this.config.destinationConfig.stretchH);
-      let numTilesY = this.getNumberOfTiles(this.canvasA.height, this.canvasA.height, this.config.destinationConfig.stretchV);
-
-      for (let i = 0; i < numTilesX; i++) {
-        for (let j = 0; j < numTilesY; j++) {
-          let { tempSize, tempPosition } = this.calculateParams(
-            i,
-            numTilesX,
-            this.canvasA.width,
-            this.canvasA.width,
-            this.config.destinationConfig.stretchH
-          );
-          tempSizeX = tempSize;
-          tempPositionX = tempPosition;
-
-          ({ tempSize, tempPosition } = this.calculateParams(
-            j,
-            numTilesY,
-            this.canvasA.height,
-            this.canvasA.height,
-            this.config.destinationConfig.stretchV
-          ));
-          tempSizeY = tempSize;
-          tempPositionY = tempPosition;
-          if (this.firstTimeFlag) {
-            this.firstTimeFlag = false;
-            console.log(tempSize, tempPosition);
-            console.log(numTilesX, numTilesY);
-          }
-
-          ex.drawImage(
-            this.canvasA,
-            0,
-            0,
-            this.canvasA.width,
-            this.canvasA.height,
-            tempPositionX,
-            tempPositionY,
-            tempSizeX,
-            tempSizeY
-          );
-        }
-      }
-
-       
-      switch (this.config.destinationConfig.stretchH) {
-        case NineSliceStretch.Stretch:
-          ex.drawImage(
-            this.canvasB,
-            0,
-            0,
-            this.canvasB.width,
-            this.canvasB.height,
-            x + this.config.sourceConfig.leftMargin,
-            y,
-            //@ts-ignore
-            this.config.width - this.config.sourceConfig.leftMargin - this.config.sourceConfig.rightMargin,
-            this.canvasB.height
-          );
-          break;
-        case NineSliceStretch.Tile:
-          //@ts-ignore
-          const numTilesX = Math.ceil(this.config.width / this.config.sourceConfig.width);
-
-          for (let i = 0; i < numTilesX; i++) {
-            const tileX = i * this.config.sourceConfig.width + this.config.sourceConfig.leftMargin;
-            let widthX = this.config.sourceConfig.width;
-            // if last tile, adjust width
-            if (i === numTilesX - 1) {
-              widthX =
-                //@ts-ignore
-                this.config.width -
-                this.config.sourceConfig.rightMargin -
-                this.config.sourceConfig.leftMargin -
-                numTilesX * this.config.sourceConfig.width;
-            }
-
-            ex.drawImage(
-              this.canvasB,
-              0,
-              0,
-              this.canvasB.width,
-              this.canvasB.height,
-              tileX,
-              y,
-              //@ts-ignore
-              widthX,
-              this.canvasB.height
-            );
-          }
-          break;
-      } 
-
-        switch (this.config.destinationConfig.stretchH) {
-        case NineSliceStretch.Stretch:
-        case NineSliceStretch.Tile:
-          ex.drawImage(
-            this.canvasC,
-            0,
-            0,
-            this.canvasC.width,
-            this.canvasC.height,
-            //@ts-ignore
-            x + (this.config.width - this.config.sourceConfig.rightMargin),
-            y,
-            this.canvasC.width,
-            this.canvasC.height
-          );
-          break;
-      } 
-
-      switch (this.config.destinationConfig.stretchV) {
-        case NineSliceStretch.Stretch:
-          ex.drawImage(
-            this.canvasD,
-            0,
-            0,
-            this.canvasD.width,
-            this.canvasD.height,
-            x,
-            y + this.config.sourceConfig.topMargin,
-            this.canvasD.width,
-            //@ts-ignore
-            this.config.height - this.config.sourceConfig.topMargin - this.config.sourceConfig.bottomMargin
-          );
-          break;
-        case NineSliceStretch.Tile:
-          //@ts-ignore
-          const numTilesY = Math.ceil(this.config.height / this.config.sourceConfig.height);
-
-          for (let i = 0; i < numTilesY; i++) {
-            const tileY = i * this.config.sourceConfig.height + this.config.sourceConfig.topMargin;
-            let heightY = this.config.sourceConfig.height;
-            // if last tile, adjust width
-            if (i === numTilesY - 1) {
-              //@ts-ignore
-              heightY = numTilesY * this.config.sourceConfig.height - this.config.height - this.config.sourceConfig.topMargin;
-            }
-            console.log(numTilesY, tileY, heightY);
-
-            ex.drawImage(
-              this.canvasD,
-              0,
-              0,
-              this.canvasD.width,
-              this.canvasD.height,
-              x,
-              tileY,
-              //@ts-ignore
-              this.canvasD.width,
-              heightY
-            );
-          }
-          break;
-      }
-
-      if (this.config.destinationConfig.drawCenter) {
-        let drawWidth, drawHeight;
-        switch (this.config.destinationConfig.stretchH) {
-          case NineSliceStretch.Stretch:
-            //@ts-ignore
-            drawWidth = this.config.width - this.config.sourceConfig.leftMargin - this.config.sourceConfig.rightMargin;
-        }
-        switch (this.config.destinationConfig.stretchV) {
-          case NineSliceStretch.Stretch:
-            //@ts-ignore
-            drawHeight = this.config.height - this.config.sourceConfig.topMargin - this.config.sourceConfig.bottomMargin;
-        }
-
-        ex.drawImage(
-          this.canvasE,
-          0,
-          0,
-          this.canvasE.width,
-          this.canvasE.height,
-          x + this.config.sourceConfig.leftMargin,
-          y + this.config.sourceConfig.topMargin,
-          drawWidth,
-          drawHeight
-        );
-      }
-
-      switch (this.config.destinationConfig.stretchV) {
-        case NineSliceStretch.Stretch:
-          ex.drawImage(
-            this.canvasF,
-            0,
-            0,
-            this.canvasF.width,
-            this.canvasF.height,
-            //@ts-ignore
-            x + this.config.width - this.config.sourceConfig.rightMargin,
-            y + this.config.sourceConfig.topMargin,
-            this.canvasF.width,
-            //@ts-ignore
-            this.config.height - this.config.sourceConfig.topMargin - this.config.sourceConfig.bottomMargin
-          );
-          break;
-        case NineSliceStretch.Tile:
-          //@ts-ignore
-          const numTilesY = Math.ceil(this.config.height / this.config.sourceConfig.height);
-
-          for (let i = 0; i < numTilesY; i++) {
-            const tileY = i * this.config.sourceConfig.height + this.config.sourceConfig.topMargin;
-            let heightY = this.config.sourceConfig.height;
-            // if last tile, adjust width
-            if (i === numTilesY - 1) {
-              heightY = numTilesY * this.config.sourceConfig.height - tileY - this.config.sourceConfig.topMargin;
-            }
-            ex.drawImage(
-              this.canvasD,
-              0,
-              0,
-              this.canvasD.width,
-              this.canvasD.height,
-              //@ts-ignore
-              this.config.width - this.config.sourceConfig.rightMargin,
-              tileY,
-              //@ts-ignore
-              this.canvasD.width,
-              heightY
-            );
-          }
-          break;
-          
-      }
-
-
-      ex.drawImage(
-        this.canvasG,
-        0,
-        0,
-        this.canvasG.width,
-        this.canvasG.height,
-        0,
-        //@ts-ignore
-        y + this.config.height - this.config.sourceConfig.bottomMargin,
-        this.canvasG.width,
-        this.canvasG.height
-      );
-
-      
-      switch (this.config.destinationConfig.stretchH) {
-        case NineSliceStretch.Stretch:
-          ex.drawImage(
-            this.canvasH,
-            0,
-            0,
-            this.canvasH.width,
-            this.canvasH.height,
-            x + this.config.sourceConfig.leftMargin,
-            //@ts-ignore
-            y + this.config.height - this.config.sourceConfig.bottomMargin,
-            //@ts-ignore
-            this.config.width - this.config.sourceConfig.leftMargin - this.config.sourceConfig.rightMargin,
-            this.canvasH.height
-          );
-          break;
-        case NineSliceStretch.Tile:
-          //@ts-ignore
-          const numTilesX = Math.ceil(this.config.width / this.config.sourceConfig.width);
-
-          for (let i = 0; i < numTilesX; i++) {
-            const tileX = i * this.config.sourceConfig.width + this.config.sourceConfig.leftMargin;
-            let widthX = this.config.sourceConfig.width;
-            // if last tile, adjust width
-            if (i === numTilesX - 1) {
-              widthX = numTilesX * this.config.sourceConfig.width - tileX - this.config.sourceConfig.rightMargin;
-            }
-            ex.drawImage(
-              this.canvasH,
-              0,
-              0,
-              this.canvasB.width,
-              this.canvasB.height,
-              tileX,
-              //@ts-ignore
-              this.config.height - this.config.sourceConfig.bottomMargin,
-              //@ts-ignore
-              widthX,
-              this.canvasB.height
-            );
-          }
-          break;
-      }
-    //bottom right, no strecthing
-
-      let bottomDrawX, bottomDrawY;
-      switch (this.config.destinationConfig.stretchH) {
-        case NineSliceStretch.Stretch:
-        case NineSliceStretch.Tile:
-          //@ts-ignore
-          bottomDrawX = this.config.width - this.config.sourceConfig.rightMargin;
-      }
-      switch (this.config.destinationConfig.stretchV) {
-        case NineSliceStretch.Stretch:
-        case NineSliceStretch.Tile:
-          //@ts-ignore
-          bottomDrawY = this.config.height - this.config.sourceConfig.bottomMargin;
-          break;
-      }
-      ex.drawImage(
-        this.canvasI,
-        0,
-        0,
-        this.canvasI.width,
-        this.canvasI.height,
-        bottomDrawX,
-        bottomDrawY,
-        this.canvasI.width,
-        this.canvasI.height
-      );
-*/
